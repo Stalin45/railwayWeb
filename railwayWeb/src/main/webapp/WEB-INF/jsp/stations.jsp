@@ -10,7 +10,7 @@
     </tr>
     <tr>
         <td colspan="2">
-            <input type="submit" value="<spring:message code="label.addcontact"/>"/>
+            <input type="submit" value="Add station"/>
         </td>
     </tr>
 </table>  
@@ -18,7 +18,7 @@
  
      
 <h3>Stations:</h3>
-<c:if  test="${!empty stationList}">
+<%--<c:if  test="${!empty stationList}">--%>
 <table>
 <tr>
     <th>id</th>
@@ -33,4 +33,4 @@
     </tr>
 </c:forEach>
 </table>
-</c:if>
+<%--</c:if>--%>
