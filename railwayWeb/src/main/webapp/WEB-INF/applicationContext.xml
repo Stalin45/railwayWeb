@@ -6,5 +6,8 @@
     <bean name="railwayDAO" class="com.tschool.railwayweb.dao.RailwayDAO"></bean>
 
     <bean name="stationService" class="com.tschool.railwayweb.service.StationService"></bean>
+    <bean name="pathmapService" class="com.tschool.railwayweb.service.PathmapService"></bean>
+    <bean name="pathService" class="com.tschool.railwayweb.service.PathService"></bean>
+
 
 </beans>

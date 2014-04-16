@@ -7,6 +7,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
@@ -23,11 +24,23 @@ public class StationService {
     public List<Station> getStationList() {
         List<Station> stationList = null;
         try {
-             rDAO.getEntityList(Station.class);
+             stationList = rDAO.getEntityList(Station.class);
         } catch (FindException ex) {
             Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
         }
         return stationList;
+    }
+    
+    @Transactional
+    public Station getById(Long privateKey) {
+        Station station = null;
+        try {
+            station = (Station) rDAO.findByPrimaryKey(Station.class, privateKey);
+            Hibernate.initialize(station.getNextStations());
+        } catch (FindException ex) {
+            Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return station;
     }
     
     @Transactional
@@ -42,24 +55,38 @@ public class StationService {
             Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+    
+    @Transactional
+    public List<Pathmap> getPathmapList(Station station) {
+        List<Pathmap> pathmapList = null;
+        try {
+             pathmapList = rDAO.getPathmapList(station);
+        } catch (FindException ex) {
+            Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return pathmapList;
+    }
+    
+    @Transactional
+    public void delete(Station station) {
+        try {
+            rDAO.remove(station);
+        } catch (RemoveException ex) {
+            Logger.getLogger(PathmapService.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
+    @Transactional
+    public void delete(Pathmap pathmap) {
+        try {
+            rDAO.remove(pathmap);
+        } catch (RemoveException ex) {
+            Logger.getLogger(PathmapService.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
 //    
-//    public CommandResponse createPath(Path path, List<Destination> destinationList) {
-//        CommandResponse response = new CommandResponse();
-//        int resultCode = 0;
-//        try {
-//            rDAO.beginTransaction();
-//            rDAO.addEntity(path);
-//            rDAO.addEntityList(destinationList);
-//            rDAO.commitTransaction();
-//            resultCode = 1;
-//        } catch (Exception ex) {
-//            response.setException(ex);
-//            response.setResultCode(resultCode);
-//            return response;
-//        } 
-//        response.setResultCode(resultCode);
-//        return response;
-//    }
+//    
 //    
 //    private Boolean isSecondTicket(Passenger passenger, Long timetableId) {
 //        List<Ticket> ticketList = passenger.getTicketList();

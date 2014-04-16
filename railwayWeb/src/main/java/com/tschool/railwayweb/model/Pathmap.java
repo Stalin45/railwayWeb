@@ -37,13 +37,13 @@ public class Pathmap implements Serializable {
         return id;
     }
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(cascade = CascadeType.REFRESH, fetch = FetchType.LAZY)
     @JoinColumn(name = "current_station")
     public Station getCurrentStation() {
         return currentStation;
     }
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(cascade = CascadeType.REFRESH, fetch = FetchType.EAGER)
     @JoinColumn(name = "next_station")
     public Station getNextStation() {
         return nextStation;

@@ -10,6 +10,7 @@ import java.util.List;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceException;
 import javax.persistence.Query;
+import org.hibernate.Hibernate;
 import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
@@ -58,6 +59,22 @@ public class RailwayDAO <T extends Serializable> {
         }
     }
     
+     /**
+     * removes entity but it refreshes it before.
+     * Refreshing is required because entity could be detached/or composed out of transaction.
+     * @param obj
+     * @throws RemoveException
+     */
+    public void remove(T entity) throws RemoveException {
+        try {
+            sessionFactory.getCurrentSession().refresh(entity);
+            sessionFactory.getCurrentSession().delete(entity);
+        } catch (Exception e) {
+            throw new RemoveException(e);
+        }
+    }
+    
+    
     public T findByPrimaryKey(Class<T> entityToFind, Long privateKey) throws FindException{
         T entity = null;
         try {
@@ -71,9 +88,31 @@ public class RailwayDAO <T extends Serializable> {
         }
         return entity;
     }
+    //????
+    public List<Pathmap> getPathmapList(Station station) throws FindException {
+        String queryString = "FROM Pathmap p WHERE p.currentStation = " + station.getId();
+        try {
+            List<Pathmap> pathmapList = sessionFactory.getCurrentSession().createQuery(queryString).list();
+            //for(Pathmap pathmap : pathmapList)
+            for (int i=0; i<pathmapList.size(); i++)
+                Hibernate.initialize(pathmapList.get(i).getNextStation());
+            return pathmapList;
+        } catch (Exception ex) {
+            throw new FindException(ex);
+        }
+    }
     
     public List<T> getEntityList(Class<T> classToFind) throws FindException {
         String queryString = "FROM " + classToFind.getSimpleName();
+        try {
+            return sessionFactory.getCurrentSession().createQuery(queryString).list();
+        } catch (Exception ex) {
+            throw new FindException(ex);
+        }
+    }
+    
+    public List<T> getPathmapList() throws FindException {
+        String queryString = "FROM Pathmap p ORDER BY p.currentStation";
         try {
             return sessionFactory.getCurrentSession().createQuery(queryString).list();
         } catch (Exception ex) {
