@@ -3,6 +3,7 @@ package com.tschool.railwayweb.service;
 import com.tschool.railwayweb.dao.RailwayDAO;
 import com.tschool.railwayweb.model.*;
 import com.tschool.railwayweb.util.exception.*;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Level;
@@ -43,14 +44,75 @@ public class StationService {
         return station;
     }
     
+//    @Transactional
+//    public void createStation(Station station, List<Pathmap> pathmapList) {
+//        String newName = station.getName();
+//        try {
+//            if (station.getId() != null) {
+//                station = (Station) rDAO.findByPrimaryKey(Station.class, station.getId());
+//                station.setName(newName);
+//                rDAO.update(station);
+//            } else {
+//            rDAO.addEntity(station);
+//            }
+//            rDAO.deleteRelationsByStation(station);
+////            for(int i=0; i<station.getCurrentStations().size(); i++)
+////                rDAO.detach(station.getCurrentStations().get(i));
+////            for(int i=0; i<station.getNextStations().size(); i++)
+////                rDAO.detach(station.getNextStations().get(i));
+//            rDAO.detach(station);
+//            if (pathmapList != null)
+//                //LazyInitializingException
+//                for (int i=0; i<pathmapList.size(); i++) {
+//                    pathmapList.get(i).getCurrentStation().setCurrentStations(null);
+//                    pathmapList.get(i).getCurrentStation().setNextStations(null);
+//                    pathmapList.get(i).getCurrentStation().setDestination(null);
+//                    pathmapList.get(i).getNextStation().setCurrentStations(null);
+//                    pathmapList.get(i).getNextStation().setNextStations(null);
+//                    pathmapList.get(i).getNextStation().setDestination(null);
+//                }
+//                rDAO.addEntityList(pathmapList);
+//        } catch (CreateException ex) {
+//            Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
+//        } catch (RemoveException ex) {
+//            Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
+//        } catch (FindException ex) {
+//            Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
+//        } catch (UpdateException ex) {
+//            Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
+//        } catch (DataStoreException ex) {
+//            Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
+//        }
+//    }
+    
     @Transactional
-    public void createStation(Station station, List<Pathmap> pathmapForwardList, List<Pathmap> pathmapBackList) {
+    public void createStation(Station station, List<Pathmap> pathmapList) {
+        String newName = station.getName();
         try {
-            rDAO.addEntity(station);
-            if (pathmapForwardList != null)
-                rDAO.addEntityList(pathmapForwardList);
-            if (pathmapBackList != null)
-                rDAO.addEntityList(pathmapBackList);
+            List<Pathmap> currentStations = new ArrayList<Pathmap>();
+            List<Pathmap> nextStations = new ArrayList<Pathmap>();
+            for (Pathmap pathmap : pathmapList) {
+                if (pathmap.getCurrentStation().getName().equals(newName)) {
+                    currentStations.add(pathmap);
+                } else {
+                    nextStations.add(pathmap);
+                }
+            }
+            if (station.getId() != null) {
+                station = (Station) rDAO.findByPrimaryKey(Station.class, station.getId());
+                station.setName(newName);
+                station.setCurrentStations(currentStations);
+                station.setNextStations(nextStations);
+                rDAO.update(station);
+            } else {
+                station.setCurrentStations(currentStations);
+                station.setNextStations(nextStations);
+                rDAO.addEntity(station);
+            }
+        } catch (FindException ex) {
+            Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (UpdateException ex) {
+            Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
         } catch (CreateException ex) {
             Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
         }

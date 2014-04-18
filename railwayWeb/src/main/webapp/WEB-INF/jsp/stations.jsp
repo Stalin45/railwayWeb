@@ -1,14 +1,15 @@
 <%@ include file="header.jsp" %>
 
-<script type="text/javascript" src="jquery-2.0.3.js"></script>
-<script type="text/javascript" src="jquery-2.0.3.js">
+<script type="text/javascript">
     $(document).ready(function () {
         $('#confirmButton').click(processSaving);
-    });
+        });
 
     function processSaving() {
-        alert("name");
-    }
+        var stationName = $('#stationName').val();
+        $.post('${pageContext.request.contextPath}/stations/addStation', 
+                {'stationName': stationName});
+        }
 </script>
 
 <h2>Station:</h2>

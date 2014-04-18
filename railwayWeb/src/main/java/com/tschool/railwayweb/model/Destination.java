@@ -19,7 +19,7 @@ import javax.persistence.TemporalType;
 
 @Entity
 @Table(name = "Destinations")
-public class Destination implements Serializable {
+public class Destination implements Serializable, Comparable<Destination> {
     
     private Long id;
     private Station station;
@@ -44,7 +44,7 @@ public class Destination implements Serializable {
         return id;
     }
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(cascade = CascadeType.REFRESH, fetch = FetchType.EAGER)
     @JoinColumn(name="station_id")
     public Station getStation() {
         return station;
@@ -56,7 +56,7 @@ public class Destination implements Serializable {
         return time;
     }
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(cascade = CascadeType.REFRESH, fetch = FetchType.LAZY)
     @JoinColumn(name="path_number")
     public Path getPath() {
         return path;
@@ -85,5 +85,15 @@ public class Destination implements Serializable {
 
     public void setNumber(Integer number) {
         this.number = number;
+    }
+
+    @Override
+    public int compareTo(Destination obj) {
+        if (this.number < obj.number) {
+            return -1;
+        } else if (this.number > obj.number) {
+            return 1;
+        }
+        return 0;
     }
 }

@@ -75,8 +75,11 @@ public class StationController {
     }
     
     @RequestMapping(method = RequestMethod.POST, value = "stations/addStation")
-    public String addStation(@ModelAttribute("station") Station station) {
-        stationService.createStation(station, null, null);
+    public String addStation(HttpSession session, @RequestParam(value = "stationName") String stationName) {
+        Station station = (Station) session.getAttribute("station");
+        station.setName(stationName);
+        List<Pathmap> pathmapList = (List<Pathmap>) session.getAttribute("pathmapList");
+        stationService.createStation(station, pathmapList);
         return "redirect:/stations";
     }
     

@@ -53,9 +53,27 @@ public class RailwayDAO <T extends Serializable> {
         }
     }
     
+    /**
+     * detaches entity.
+     * @param entity
+     * @throws DataStoreException
+     */
+    public void detach(T entity) throws DataStoreException {
+        try {
+            if (sessionFactory.getCurrentSession().contains(entity)) {
+                sessionFactory.getCurrentSession().evict(entity);
+                sessionFactory.getCurrentSession().flush();
+                sessionFactory.getCurrentSession().clear();
+            }
+        } catch (Exception e) {
+            throw new DataStoreException(e);
+        }
+    }
+    
     public void addEntityList(List<T> entityList) {
         for(T entity : entityList) {
-            sessionFactory.getCurrentSession().persist(entity);
+            //sessionFactory.getCurrentSession().persist(entity);
+            sessionFactory.getCurrentSession().saveOrUpdate(entity);
         }
     }
     
@@ -69,6 +87,23 @@ public class RailwayDAO <T extends Serializable> {
         try {
             sessionFactory.getCurrentSession().refresh(entity);
             sessionFactory.getCurrentSession().delete(entity);
+        } catch (Exception e) {
+            throw new RemoveException(e);
+        }
+    }
+    
+    public void deleteRelationsByStation(Station station) throws RemoveException {
+        try {
+            //sessionFactory.getCurrentSession().clear();
+            for (int i=0; i<station.getCurrentStations().size(); i++) {
+                Pathmap relation = station.getCurrentStations().get(i);
+                //sessionFactory.getCurrentSession().refresh(relation);
+                sessionFactory.getCurrentSession().delete(relation);
+            }
+            for (int i=0; i<station.getNextStations().size(); i++) {
+                Pathmap relation = station.getNextStations().get(i);
+                sessionFactory.getCurrentSession().delete(relation);
+            }
         } catch (Exception e) {
             throw new RemoveException(e);
         }
