@@ -46,7 +46,7 @@ public class RailwayDAO <T extends Serializable> {
      */
     public T update(T entity) throws UpdateException {
         try {
-            sessionFactory.getCurrentSession().merge(entity);
+            sessionFactory.getCurrentSession().saveOrUpdate(entity);
             return entity;
         } catch (Exception ex) {
             throw new UpdateException(ex);

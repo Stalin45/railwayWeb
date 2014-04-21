@@ -19,7 +19,7 @@ public class StationService {
     
     @Autowired
     @Qualifier(value = "railwayDAO")
-    RailwayDAO rDAO = new RailwayDAO();
+    private RailwayDAO rDAO = new RailwayDAO();
     
     @Transactional
     public List<Station> getStationList() {
@@ -299,27 +299,6 @@ public class StationService {
 //    
 //    
 //    
-//    public CommandResponse createUser(User user) {
-//        CommandResponse response = new CommandResponse();
-//        int resultCode = 0;
-//        try {
-//            rDAO.beginTransaction();
-//            try {
-//                rDAO.findByPrimaryKey(User.class, user.getLogin());
-//                throw new SecondUserException("This user is already registered");
-//            } catch (FindException ex) {}
-//            
-//            rDAO.addEntity(user);
-//            rDAO.commitTransaction();
-//            resultCode = 1;
-//        } catch (Exception ex) {
-//            response.setException(ex);
-//            response.setResultCode(resultCode);
-//            return response;
-//        } 
-//        response.setResultCode(resultCode);
-//        return response;
-//    }
 //    
 //    public CommandResponse isSignedUp(SuperUser userToFind) {
 //        CommandResponse response = new CommandResponse();

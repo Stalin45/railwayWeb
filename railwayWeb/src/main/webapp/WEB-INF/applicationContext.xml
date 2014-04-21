@@ -3,11 +3,15 @@
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
     
-    <bean name="railwayDAO" class="com.tschool.railwayweb.dao.RailwayDAO"></bean>
-
+    <bean name="railwayDAO" class="com.tschool.railwayweb.dao.RailwayDAO">
+    </bean>
+    <bean name="userDAO" class="com.tschool.railwayweb.dao.UserDAO">
+    </bean>
+    
+    <bean name="userDetailsServiceImpl" class="com.tschool.railwayweb.service.UserDetailsServiceImpl"></bean>
+    <bean name="userService" class="com.tschool.railwayweb.service.UserService"></bean>
     <bean name="stationService" class="com.tschool.railwayweb.service.StationService"></bean>
     <bean name="pathmapService" class="com.tschool.railwayweb.service.PathmapService"></bean>
     <bean name="pathService" class="com.tschool.railwayweb.service.PathService"></bean>
-
-
+    
 </beans>

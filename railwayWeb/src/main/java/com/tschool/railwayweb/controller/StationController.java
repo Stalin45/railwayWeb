@@ -2,9 +2,9 @@ package com.tschool.railwayweb.controller;
 
 import com.tschool.railwayweb.model.Pathmap;
 import com.tschool.railwayweb.model.Station;
-import com.tschool.railwayweb.model.StationDTO;
 import com.tschool.railwayweb.service.StationService;
 import java.beans.PropertyEditorSupport;
+import java.security.Principal;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -12,6 +12,11 @@ import javax.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.propertyeditors.CustomCollectionEditor;
+import org.springframework.security.access.prepost.PostAuthorize;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.ServletRequestDataBinder;
@@ -36,6 +41,11 @@ public class StationController {
     @ModelAttribute("stationList")
     public List<Station> getStationList() {
         return stationService.getStationList();
+    }
+    
+    @ModelAttribute("authentication")
+    public Authentication getPrincipal() {
+        return SecurityContextHolder.getContext().getAuthentication();
     }
 //    
 //    @ModelAttribute("pathmapList") 
@@ -63,6 +73,11 @@ public class StationController {
         return new Pathmap();
     }
     
+    @RequestMapping("/")
+    public String home() {
+        return "index";
+    }
+
     @RequestMapping(method = RequestMethod.GET, value = "/stations")
     public String initForm(HttpSession session, Model model) {
         Station station = new Station();

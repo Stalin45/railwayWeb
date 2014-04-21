@@ -20,6 +20,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.ServletRequestDataBinder;
@@ -52,6 +54,11 @@ public class PathController {
     @ModelAttribute("destination")
     public Destination getDestination() {
         return new Destination();
+    }
+    
+    @ModelAttribute("authentication")
+    public Authentication getPrincipal() {
+        return SecurityContextHolder.getContext().getAuthentication();
     }
     
     @RequestMapping(method = RequestMethod.GET, value = "/paths")
