@@ -170,6 +170,8 @@
                             </c:forEach>
                         </table>
                     </c:if>
+                    <div class="operation-msg">${msg}</div>
+                    <div class="operation-error">${error}</div>
                 </div>
             </div>
         </div>

@@ -11,6 +11,10 @@ import com.tschool.railwayweb.model.Relation;
 import com.tschool.railwayweb.model.Station;
 import com.tschool.railwayweb.service.PathService;
 import com.tschool.railwayweb.service.StationService;
+import com.tschool.railwayweb.util.exception.CreateException;
+import com.tschool.railwayweb.util.exception.FindException;
+import com.tschool.railwayweb.util.exception.RemoveException;
+import com.tschool.railwayweb.util.exception.TrainHasTicketsException;
 import java.beans.PropertyEditorSupport;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -54,9 +58,12 @@ public class PathController {
     private StationService stationService;
     
     @RequestMapping(method = RequestMethod.GET, value = "/paths")
-    public String initForm(HttpSession session) {
+    public String initForm(HttpSession session, Model model) {
         PathDTO path = new PathDTO();
-        
+        model.addAttribute("error", session.getAttribute("error"));
+        model.addAttribute("msg", session.getAttribute("msg"));
+        session.setAttribute("error", null);
+        session.setAttribute("msg", null);
         session.setAttribute("path", path);
         session.setAttribute("pathList", pathService.getPathList());
         session.setAttribute("lastNumber", 1);
@@ -69,15 +76,30 @@ public class PathController {
     public String addPath(HttpSession session) {
         PathDTO path = (PathDTO) session.getAttribute("path");
         List<DestinationDTO> destinationList = (List<DestinationDTO>) session.getAttribute("destinationList");
-        pathService.createPath(path, destinationList);
+        try {
+            pathService.createPath(path, destinationList);
+            session.setAttribute("msg", "successfuly!");
+        } catch (TrainHasTicketsException ex) {
+            Logger.getLogger(StationController.class.getName()).log(Level.SEVERE, null, ex);
+            session.setAttribute("error", ex.getMessage());
+        } catch (FindException ex) {
+            Logger.getLogger(PathController.class.getName()).log(Level.SEVERE, null, ex);
+            session.setAttribute("error", "Error, can't find path");
+        } catch (RemoveException ex) {
+            Logger.getLogger(StationController.class.getName()).log(Level.SEVERE, null, ex);
+            session.setAttribute("error", "Error, can't delete destination");
+        } catch (CreateException ex) {
+            Logger.getLogger(PathController.class.getName()).log(Level.SEVERE, null, ex);
+            session.setAttribute("error", "Error, can't create entity");
+        }
         return "redirect:/paths";
     }
     
     @RequestMapping(method = RequestMethod.POST, value = "paths/pushDestination")
     @ResponseBody
     public PathFormDTO pushDestination(HttpSession session, @RequestParam(value = "stationId") Long stationId,
-                                                               @RequestParam(value = "stationName") String stationName,
-                                                               @RequestParam(value = "timeString") String timeString) {
+                                                            @RequestParam(value = "stationName") String stationName,
+                                                            @RequestParam(value = "timeString") String timeString) {
         try {
             Integer lastNumber = (Integer) session.getAttribute("lastNumber");
             PathDTO path = (PathDTO) session.getAttribute("path");
@@ -135,7 +157,18 @@ public class PathController {
 
     @RequestMapping(method = RequestMethod.GET, value = "paths/deletePath/{id}")
     public String deletePath(HttpSession session, @PathVariable Long id) {
-        pathService.delete(id);
+        try {
+            pathService.delete(id);
+        } catch (TrainHasTicketsException ex) {
+            Logger.getLogger(StationController.class.getName()).log(Level.SEVERE, null, ex);
+            session.setAttribute("error", ex.getMessage());
+        } catch (RemoveException ex) {
+            Logger.getLogger(StationController.class.getName()).log(Level.SEVERE, null, ex);
+            session.setAttribute("error", "Error, can't delete station");
+        } catch (FindException ex) {
+            Logger.getLogger(StationController.class.getName()).log(Level.SEVERE, null, ex);
+            session.setAttribute("error", "Error, can't delete station");
+        }
         return "redirect:/paths";
     }
     
@@ -163,26 +196,6 @@ public class PathController {
                 if (value != null) {
                     Date time = (Date) value;
                     return sdf.format(time);
-                }
-                return null;
-            }
-        });
-        
-        binder.registerCustomEditor(Station.class, "station", new PropertyEditorSupport() {
-
-//            public void setAsText(String text) {
-//                if (text instanceof String) {
-//                    Long nextStationId = Long.parseLong(text);
-//                    Station nextStation = (Station) stationService.getById(nextStationId);
-//                    setValue(nextStation);
-//                }
-//            }
-
-            public String getAsText() {
-                Object value = getValue();
-                if (value != null) {
-                    Station station = (Station) value;
-                    return station.getName();
                 }
                 return null;
             }

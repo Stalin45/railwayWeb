@@ -31,38 +31,38 @@ public class RailwayDAO <T extends Serializable> {
         }
     }
  
-    /**
-     * updates entity
-     *
-     * @param entity
-     * @return
-     * @throws UpdateException
-     */
-    public T update(T entity) throws UpdateException {
-        try {
-            sessionFactory.getCurrentSession().saveOrUpdate(entity);
-            return entity;
-        } catch (Exception ex) {
-            throw new UpdateException(ex);
-        }
-    }
+//    /**
+//     * updates entity
+//     *
+//     * @param entity
+//     * @return
+//     * @throws UpdateException
+//     */
+//    public T update(T entity) throws UpdateException {
+//        try {
+//            sessionFactory.getCurrentSession().saveOrUpdate(entity);
+//            return entity;
+//        } catch (Exception ex) {
+//            throw new UpdateException(ex);
+//        }
+//    }
     
-    /**
-     * detaches entity.
-     * @param entity
-     * @throws DataStoreException
-     */
-    public void detach(T entity) throws DataStoreException {
-        try {
-            if (sessionFactory.getCurrentSession().contains(entity)) {
-                sessionFactory.getCurrentSession().evict(entity);
-                sessionFactory.getCurrentSession().flush();
-                sessionFactory.getCurrentSession().clear();
-            }
-        } catch (Exception e) {
-            throw new DataStoreException(e);
-        }
-    }
+//    /**
+//     * detaches entity.
+//     * @param entity
+//     * @throws DataStoreException
+//     */
+//    public void detach(T entity) throws DataStoreException {
+//        try {
+//            if (sessionFactory.getCurrentSession().contains(entity)) {
+//                sessionFactory.getCurrentSession().evict(entity);
+//                sessionFactory.getCurrentSession().flush();
+//                sessionFactory.getCurrentSession().clear();
+//            }
+//        } catch (Exception e) {
+//            throw new DataStoreException(e);
+//        }
+//    }
     
     public void addEntityList(List<T> entityList) {
         for(T entity : entityList) {
@@ -71,15 +71,8 @@ public class RailwayDAO <T extends Serializable> {
         }
     }
     
-     /**
-     * removes entity but it refreshes it before.
-     * Refreshing is required because entity could be detached/or composed out of transaction.
-     * @param obj
-     * @throws RemoveException
-     */
     public void remove(T entity) throws RemoveException {
         try {
-//            sessionFactory.getCurrentSession().refresh(entity);
             sessionFactory.getCurrentSession().delete(entity);
         } catch (Exception e) {
             throw new RemoveException(e);
@@ -179,29 +172,6 @@ public class RailwayDAO <T extends Serializable> {
             throw new FindException(ex);
         }
     }
-    
-//        public List<TimeTable> whichTimetablesFitPathsDate(Date date, List<Path> pathList) throws FindException {
-//        StringBuilder queryString = new StringBuilder("SELECT t FROM TimeTable t WHERE date = :date AND (");
-//        
-//        for (int i = 0; i<pathList.size(); i++) {
-//            queryString.append("path = :path"+i);
-//            if (pathList.size() != i+1)
-//                 queryString.append(" or ");
-//            else queryString.append(")");
-//        }
-//        
-//        Query query = eManager.createQuery(queryString.toString());
-//        query.setParameter("date", date);
-//        
-//        for (int i = 0; i<pathList.size(); i++) {
-//            query.setParameter("path"+i, pathList.get(i));
-//        }
-//        try {
-//            return query.getResultList();
-//        } catch (Exception ex) {
-//            throw new FindException(ex);
-//        }
-//    }
     
     public List<Train> whichTrainsFitDate(Date date, List<Train> trainList) throws FindException {
         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");

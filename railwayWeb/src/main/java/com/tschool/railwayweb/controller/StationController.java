@@ -8,7 +8,7 @@ import com.tschool.railwayweb.service.StationService;
 import com.tschool.railwayweb.util.exception.DataStoreException;
 import com.tschool.railwayweb.util.exception.FindException;
 import com.tschool.railwayweb.util.exception.RemoveException;
-import com.tschool.railwayweb.util.exception.TrainHasTickets;
+import com.tschool.railwayweb.util.exception.TrainHasTicketsException;
 import java.beans.PropertyEditorSupport;
 import java.util.ArrayList;
 import java.util.List;
@@ -66,7 +66,7 @@ public class StationController {
         try {
             stationService.createStation(station, newStationName, relationList);
             session.setAttribute("msg", "successfuly!");
-        } catch (TrainHasTickets ex) {
+        } catch (TrainHasTicketsException ex) {
             Logger.getLogger(StationController.class.getName()).log(Level.SEVERE, null, ex);
             session.setAttribute("error", ex.getMessage());
         } catch (RemoveException ex) {
@@ -102,7 +102,7 @@ public class StationController {
     public String deleteStation(HttpSession session, @PathVariable Long id) {
         try {
             stationService.delete(id);
-        } catch (TrainHasTickets ex) {
+        } catch (TrainHasTicketsException ex) {
             Logger.getLogger(StationController.class.getName()).log(Level.SEVERE, null, ex);
             session.setAttribute("error", ex.getMessage());
         } catch (RemoveException ex) {

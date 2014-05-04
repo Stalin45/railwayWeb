@@ -7,9 +7,11 @@ import com.tschool.railwayweb.model.Destination;
 import com.tschool.railwayweb.model.Path;
 import com.tschool.railwayweb.model.Relation;
 import com.tschool.railwayweb.model.Station;
+import com.tschool.railwayweb.model.Train;
 import com.tschool.railwayweb.util.exception.CreateException;
 import com.tschool.railwayweb.util.exception.FindException;
 import com.tschool.railwayweb.util.exception.RemoveException;
+import com.tschool.railwayweb.util.exception.TrainHasTicketsException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -51,28 +53,39 @@ public class PathService {
         }
         return pathDTO;
     }
-    
+
     @Transactional
-    public void createPath(PathDTO pathDTO, List<DestinationDTO> destinationListDTO) {
-        try {
-            Path path = null;
-            if (pathDTO.getId() != null) {
-                path = (Path) rDAO.findByPrimaryKey(Path.class, pathDTO.getId());
-            } else {
-                path = new Path();
-            }
-            List<Destination> destinationList = new ArrayList<Destination>();
-            for (DestinationDTO destinationDTO : destinationListDTO) {
-                Station station = new Station(destinationDTO.getStationId(), destinationDTO.getStationName());
-                destinationList.add(new Destination(destinationDTO.getNumber(), station, destinationDTO.getTime(), path));
-            }
-            path.setDestination(destinationList);
-            rDAO.addEntity(path);
-        } catch (CreateException ex) {
-            Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (FindException ex) {
-            Logger.getLogger(PathService.class.getName()).log(Level.SEVERE, null, ex);
+    public void createPath(PathDTO pathDTO, List<DestinationDTO> destinationListDTO) throws TrainHasTicketsException, FindException, RemoveException, CreateException {
+        Path path = null;
+        if (pathDTO.getId() != null) {
+            path = (Path) rDAO.findByPrimaryKey(Path.class, pathDTO.getId());
+        } else {
+            path = new Path();
         }
+        List<Destination> newDestinationList = new ArrayList<Destination>();
+        for (DestinationDTO destinationDTO : destinationListDTO) {
+            Station station = new Station(destinationDTO.getStationId(), destinationDTO.getStationName());
+            newDestinationList.add(new Destination(destinationDTO.getNumber(), station, destinationDTO.getTime(), path));
+        }
+        List<Train> trainList = path.getTrain();
+        if (trainList != null) {
+            for (Train train : trainList) {
+                if (!train.getTicketList().isEmpty()) {
+                    throw new TrainHasTicketsException("Train with this station has tickets");
+                }
+            }
+        }
+        if (path.getDestination() != null) {
+            for (int i = 0; i < path.getDestination().size(); i++) {
+                Destination destination = path.getDestination().get(i);
+                rDAO.remove(destination);
+            }
+        }
+        if (path.getDestination() != null) {
+            path.getDestination().clear();
+        }
+        path.setDestination(newDestinationList);
+        rDAO.addEntity(path);
     }
     
     @Transactional
@@ -94,14 +107,16 @@ public class PathService {
     }
     
     @Transactional
-    public void delete(Long pathNumber) {
-        try {
-            Path path = (Path)rDAO.findByPrimaryKey(Path.class, pathNumber);
-            rDAO.remove(path);
-        } catch (RemoveException ex) {
-            Logger.getLogger(PathService.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (FindException ex) {
-            Logger.getLogger(PathService.class.getName()).log(Level.SEVERE, null, ex);
+    public void delete(Long pathNumber) throws FindException, TrainHasTicketsException, RemoveException {
+        Path path = (Path) rDAO.findByPrimaryKey(Path.class, pathNumber);
+        List<Train> trainList = path.getTrain();
+        if (trainList != null) {
+            for (Train train : trainList) {
+                if (!train.getTicketList().isEmpty()) {
+                    throw new TrainHasTicketsException("Train with this station has tickets");
+                }
+            }
         }
+        rDAO.remove(path);
     }
 }

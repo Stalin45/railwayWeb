@@ -63,7 +63,7 @@ public class StationService {
     }
 
     @Transactional
-    public void createStation(StationDTO stationDTO, String newStationName, List<RelationDTO> relationListDTO) throws TrainHasTickets, RemoveException, DataStoreException {
+    public void createStation(StationDTO stationDTO, String newStationName, List<RelationDTO> relationListDTO) throws TrainHasTicketsException, RemoveException, DataStoreException {
         try {
             List<Relation> currentStationList = new ArrayList<Relation>();
             List<Relation> nextStationList = new ArrayList<Relation>();
@@ -96,7 +96,7 @@ public class StationService {
                     if (trainList != null) {
                         for (Train train : trainList) {
                             if (!train.getTicketList().isEmpty()) {
-                                throw new TrainHasTickets("Train with this station has tickets");
+                                throw new TrainHasTicketsException("Train with this station has tickets");
                             }
                         }
                     }
@@ -163,7 +163,7 @@ public class StationService {
     }
     
     @Transactional
-    public void delete(Long stationId) throws TrainHasTickets, RemoveException, FindException {
+    public void delete(Long stationId) throws TrainHasTicketsException, RemoveException, FindException {
         Station station = (Station) rDAO.findByPrimaryKey(Station.class, stationId);
         List<Destination> destinationList = station.getDestination();
         if (destinationList != null)
@@ -172,7 +172,7 @@ public class StationService {
             if (trainList != null)
             for (Train train : trainList) {
                 if (!train.getTicketList().isEmpty()) {
-                    throw new TrainHasTickets("Train with this station has tickets");
+                    throw new TrainHasTicketsException("Train with this station has tickets");
                 }
             }
         }
