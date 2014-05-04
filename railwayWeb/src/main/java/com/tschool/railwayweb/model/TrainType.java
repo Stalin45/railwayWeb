@@ -9,6 +9,7 @@ import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
+import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
 
@@ -19,13 +20,15 @@ public class TrainType implements Serializable {
     private Long id;
     private String type = "";
     private Float costMultiplier = 1.0F;
-    private List<Train> trains;
+    private Integer maxSeats = 100;
+    private List<Train> trainList;
 
     public TrainType() {}
 
-    public TrainType(String type, Float costMultiplier) {
+    public TrainType(String type, Float costMultiplier, Integer maxSeats) {
         this.type = type;
         this.costMultiplier = costMultiplier;
+        this.maxSeats = maxSeats;
     }
 
     @Id
@@ -45,9 +48,14 @@ public class TrainType implements Serializable {
         return costMultiplier;
     }
 
-    @OneToMany(fetch = FetchType.EAGER,cascade = CascadeType.ALL, mappedBy = "trainType")
-    public List<Train> getTrains() {
-        return trains;
+    @Column(name = "max_seats")
+    public Integer getMaxSeats() {
+        return maxSeats;
+    }
+
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "trainType")
+    public List<Train> getTrainList() {
+        return trainList;
     }
 
     public void setId(Long id) {
@@ -62,12 +70,17 @@ public class TrainType implements Serializable {
         this.costMultiplier = costMultiplier;
     }
 
-    public void setTrains(List<Train> trains) {
-        this.trains = trains;
+    public void setMaxSeats(Integer maxSeats) {
+        this.maxSeats = maxSeats;
+    }
+
+    public void setTrainList(List<Train> trainList) {
+        this.trainList = trainList;
     }
 
     @Override
     public String toString() {
         return type;
     }
+
 }

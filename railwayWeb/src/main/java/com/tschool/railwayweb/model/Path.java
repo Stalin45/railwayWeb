@@ -18,7 +18,7 @@ public class Path implements Serializable {
     
     private Long number;
     private List<Destination> destination;
-    private List<TimeTable> timeTable;
+    private List<Train> train;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -33,8 +33,8 @@ public class Path implements Serializable {
     }
 
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "path")
-    public List<TimeTable> getTimeTable() {
-        return timeTable;
+    public List<Train> getTrain() {
+        return train;
     }
 
     public void setNumber(Long number) {
@@ -45,8 +45,8 @@ public class Path implements Serializable {
         this.destination = destination;
     }
 
-    public void setTimeTable(List<TimeTable> timeTable) {
-        this.timeTable = timeTable;
+    public void setTrain(List<Train> train) {
+        this.train = train;
     }
 
     @Override

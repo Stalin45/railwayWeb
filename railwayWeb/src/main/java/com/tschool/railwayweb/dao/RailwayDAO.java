@@ -4,6 +4,7 @@ import com.tschool.railwayweb.model.*;
 import com.tschool.railwayweb.util.exception.*;
 
 import java.io.Serializable;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -20,17 +21,10 @@ public class RailwayDAO <T extends Serializable> {
 
     @Autowired
     private SessionFactory sessionFactory;
-    
-    /**
-     * creates entity
-     *
-     * @param entity
-     * @return
-     * @throws CreateException
-     */
+
     public T addEntity(T entity) throws CreateException {
         try {
-            sessionFactory.getCurrentSession().persist(entity);
+            sessionFactory.getCurrentSession().saveOrUpdate(entity);
             return entity;
         } catch (Exception ex) {
             throw new CreateException(ex);
@@ -85,23 +79,27 @@ public class RailwayDAO <T extends Serializable> {
      */
     public void remove(T entity) throws RemoveException {
         try {
-            sessionFactory.getCurrentSession().refresh(entity);
+//            sessionFactory.getCurrentSession().refresh(entity);
             sessionFactory.getCurrentSession().delete(entity);
         } catch (Exception e) {
             throw new RemoveException(e);
         }
     }
     
+    public void refresh(T entity) throws RemoveException {
+        sessionFactory.getCurrentSession().refresh(entity);
+    }
+    
     public void deleteRelationsByStation(Station station) throws RemoveException {
         try {
             //sessionFactory.getCurrentSession().clear();
             for (int i=0; i<station.getCurrentStations().size(); i++) {
-                Pathmap relation = station.getCurrentStations().get(i);
+                Relation relation = station.getCurrentStations().get(i);
                 //sessionFactory.getCurrentSession().refresh(relation);
                 sessionFactory.getCurrentSession().delete(relation);
             }
             for (int i=0; i<station.getNextStations().size(); i++) {
-                Pathmap relation = station.getNextStations().get(i);
+                Relation relation = station.getNextStations().get(i);
                 sessionFactory.getCurrentSession().delete(relation);
             }
         } catch (Exception e) {
@@ -123,15 +121,42 @@ public class RailwayDAO <T extends Serializable> {
         }
         return entity;
     }
-    //????
-    public List<Pathmap> getPathmapList(Station station) throws FindException {
-        String queryString = "FROM Pathmap p WHERE p.currentStation = " + station.getId();
+    
+    public Passenger getPassengerByPassport(Long passport) {
+        String queryString = "FROM Passenger p WHERE p.passport = " + passport;
         try {
-            List<Pathmap> pathmapList = sessionFactory.getCurrentSession().createQuery(queryString).list();
-            //for(Pathmap pathmap : pathmapList)
-            for (int i=0; i<pathmapList.size(); i++)
-                Hibernate.initialize(pathmapList.get(i).getNextStation());
-            return pathmapList;
+            Passenger passenger = (Passenger) sessionFactory.getCurrentSession().createQuery(queryString).list().get(0);
+            return passenger;
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+    
+    public List<Relation> getRelationList(Long stationId) throws FindException {
+        String queryString = "FROM Relation p WHERE p.currentStation = " + stationId + " or p.nextStation = " + stationId;
+        try {
+            List<Relation> relationList = sessionFactory.getCurrentSession().createQuery(queryString).list();
+            return relationList;
+        } catch (Exception ex) {
+            throw new FindException(ex);
+        }
+    }
+    
+    public List<Destination> getDestinationList(Long pathId) throws FindException {
+        String queryString = "FROM Destination d WHERE path = " + pathId;
+        try {
+            List<Destination> destinationList = sessionFactory.getCurrentSession().createQuery(queryString).list();
+            return destinationList;
+        } catch (Exception ex) {
+            throw new FindException(ex);
+        }
+    }
+    
+    public List<Ticket> getTicketListByTrain(Long trainId) throws FindException {
+        String queryString = "FROM Ticket d WHERE train = " + trainId;
+        try {
+            List<Ticket> ticketList = sessionFactory.getCurrentSession().createQuery(queryString).list();
+            return ticketList;
         } catch (Exception ex) {
             throw new FindException(ex);
         }
@@ -146,8 +171,8 @@ public class RailwayDAO <T extends Serializable> {
         }
     }
     
-    public List<T> getPathmapList() throws FindException {
-        String queryString = "FROM Pathmap p ORDER BY p.currentStation";
+    public List<T> getRelationList() throws FindException {
+        String queryString = "FROM Relation p ORDER BY p.currentStation";
         try {
             return sessionFactory.getCurrentSession().createQuery(queryString).list();
         } catch (Exception ex) {
@@ -155,7 +180,7 @@ public class RailwayDAO <T extends Serializable> {
         }
     }
     
-//    public List<TimeTable> whichTimetablesFitPathsDate(Date date, List<Path> pathList) throws FindException {
+//        public List<TimeTable> whichTimetablesFitPathsDate(Date date, List<Path> pathList) throws FindException {
 //        StringBuilder queryString = new StringBuilder("SELECT t FROM TimeTable t WHERE date = :date AND (");
 //        
 //        for (int i = 0; i<pathList.size(); i++) {
@@ -177,28 +202,20 @@ public class RailwayDAO <T extends Serializable> {
 //            throw new FindException(ex);
 //        }
 //    }
-//    
-//    public List<Path> whichPathsFitStations(List<Path> pathsToTest, String stationFrom, String stationTo) throws FindException{
-//        List<Path> resultList = new ArrayList<Path>();
-//        Boolean isStartIn;
-//        
-//        for(Path path : pathsToTest) {
-//            isStartIn = false;
-//            List<Destination> destinationList = path.getDestination();
-//            for(Destination destination : destinationList) {
-//                if (stationFrom.equals(destination.getStation().getName())) {
-//                    isStartIn = true;
-//                    continue;
-//                }
-//                if (isStartIn && stationTo.equals(destination.getStation().getName())) {
-//                    resultList.add(path);
-//                    break;
-//                }
-//            }
-//        }
-//        if (resultList.size() == 0)
-//            throw new FindException("No routes fit your options");
-//        return resultList;
-//    } 
+    
+    public List<Train> whichTrainsFitDate(Date date, List<Train> trainList) throws FindException {
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        String queryString = "FROM Train t WHERE date = :date AND (";
+        for (int i=0; i<trainList.size(); i++) {
+            queryString += "id = " + trainList.get(i).getId();
+            if (trainList.size() != i + 1) {
+                queryString += " or ";
+            } else {
+                queryString += ")";
+            }
+        }
+        return sessionFactory.getCurrentSession().createQuery(queryString).setDate("date", date).list();
+    }
+    
     
 }

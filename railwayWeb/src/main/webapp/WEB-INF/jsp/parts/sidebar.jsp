@@ -1,5 +1,5 @@
 <div class="left-sidebar">
-    <c:if test="${authentication.getName() ne 'guest'}">
+     <sec:authorize access="hasRole('ROLE_SPECIALIST')">
         <div id="spec-panel">
             <ul>
                 <li>
@@ -8,12 +8,27 @@
                 <li>
                     <a href="${pageContext.request.contextPath}/paths">Path management</a>
                 </li>
+                <li>
+                    <a href="${pageContext.request.contextPath}/trainTypes">Train type management</a>
+                </li>
+                <li>
+                    <a href="${pageContext.request.contextPath}/trains">Train management</a>
+                </li>
             </ul>
         </div>
+     </sec:authorize>
+     <sec:authorize access="hasAnyRole('ROLE_USER', 'ROLE_SPECIALIST')">
         <div id="user-panel">
-            
+            <ul>
+                <li>
+                    <a href="${pageContext.request.contextPath}/findTrains">Find trains</a>
+                </li>
+                <li>
+                    <a href="${pageContext.request.contextPath}/tickets">Buy ticket</a>
+                </li>
+            </ul>
         </div>
-    </c:if>
+     </sec:authorize>
 </div>
 <%--<sec:authorize access="isAnonymous()"></sec:authorize>
     <sec:authorize access="hasAnyRole('ROLE_USER', 'ROLE_SPECIALIST')">

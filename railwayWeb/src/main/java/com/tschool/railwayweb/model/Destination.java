@@ -44,7 +44,7 @@ public class Destination implements Serializable, Comparable<Destination> {
         return id;
     }
 
-    @ManyToOne(cascade = CascadeType.REFRESH, fetch = FetchType.EAGER)
+    @ManyToOne(cascade = CascadeType.REFRESH, fetch = FetchType.LAZY)
     @JoinColumn(name="station_id")
     public Station getStation() {
         return station;

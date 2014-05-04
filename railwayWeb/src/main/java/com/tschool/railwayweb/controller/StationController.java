@@ -1,78 +1,43 @@
 package com.tschool.railwayweb.controller;
 
-import com.tschool.railwayweb.model.Pathmap;
+import com.tschool.railwayweb.dto.RelationDTO;
+import com.tschool.railwayweb.dto.StationDTO;
+import com.tschool.railwayweb.dto.StationFormDTO;
 import com.tschool.railwayweb.model.Station;
 import com.tschool.railwayweb.service.StationService;
+import com.tschool.railwayweb.util.exception.DataStoreException;
+import com.tschool.railwayweb.util.exception.FindException;
+import com.tschool.railwayweb.util.exception.RemoveException;
+import com.tschool.railwayweb.util.exception.TrainHasTickets;
 import java.beans.PropertyEditorSupport;
-import java.security.Principal;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.propertyeditors.CustomCollectionEditor;
-import org.springframework.security.access.prepost.PostAuthorize;
-import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.access.expression.DefaultWebSecurityExpressionHandler;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.ServletRequestDataBinder;
 import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.SessionAttributes;
-import org.springframework.web.servlet.ModelAndView;
+import org.springframework.web.bind.annotation.ResponseBody;
 
 @Controller
 //@RequestMapping(value = "/stations")
-//@SessionAttributes({"pathmap", "station"})
 public class StationController {
     
     @Autowired
-    @Qualifier(value = "stationService")
     private StationService stationService;
-    
-    @ModelAttribute("stationList")
-    public List<Station> getStationList() {
-        return stationService.getStationList();
-    }
-    
-    @ModelAttribute("authentication")
-    public Authentication getPrincipal() {
-        return SecurityContextHolder.getContext().getAuthentication();
-    }
-//    
-//    @ModelAttribute("pathmapList") 
-//    public List<Pathmap> getPathmapList(HttpSession session) {
-//        if (session.getAttribute("pathmapList") == null) {
-//            List<Pathmap> pathmapList = new ArrayList<Pathmap>();
-//            session.setAttribute("pathmapList", pathmapList);
-//            return pathmapList;
-//        } else 
-//            return (List<Pathmap>) session.getAttribute("pathmapList");
-//    }
-//    
-//    @ModelAttribute("nextStationList") 
-//    public List<Station> getNextStationList(HttpSession session) {
-//        if (session.getAttribute("nextStationList") == null) {
-//            List<Station> nextStationList = new ArrayList<Station>();
-//            session.setAttribute("nextStationList", stationService.getStationList());
-//            return nextStationList;
-//        } else 
-//            return (List<Station>) session.getAttribute("nextStationList");
-//    }
-    
-    @ModelAttribute("pathmap")
-    public Pathmap getPathmap() {
-        return new Pathmap();
-    }
-    
+
     @RequestMapping("/")
     public String home() {
         return "index";
@@ -80,120 +45,76 @@ public class StationController {
 
     @RequestMapping(method = RequestMethod.GET, value = "/stations")
     public String initForm(HttpSession session, Model model) {
-        Station station = new Station();
+        StationDTO station = new StationDTO();
         station.setName("this");
-        
-        session.setAttribute("station", station);
-        session.setAttribute("nextStationList", stationService.getStationList());
-        session.setAttribute("pathmapList", new ArrayList<Pathmap>());
+        model.addAttribute("error", session.getAttribute("error"));
+        model.addAttribute("msg", session.getAttribute("msg"));
+        session.setAttribute("error", null);
+        session.setAttribute("msg", null);
+        model.addAttribute("station", station);
+        model.addAttribute("stationList", stationService.getStationList());
+        model.addAttribute("nextStationList", stationService.getStationList());
+        model.addAttribute("relationList", new ArrayList<RelationDTO>());
         return "stations";
     }
     
     @RequestMapping(method = RequestMethod.POST, value = "stations/addStation")
-    public String addStation(HttpSession session, @RequestParam(value = "stationName") String stationName) {
-        Station station = (Station) session.getAttribute("station");
-        station.setName(stationName);
-        List<Pathmap> pathmapList = (List<Pathmap>) session.getAttribute("pathmapList");
-        stationService.createStation(station, pathmapList);
-        return "redirect:/stations";
-    }
-    
-    @RequestMapping(method = RequestMethod.POST, value = "stations/bindRelation")
-    public String bindRelation(HttpSession session, @ModelAttribute(value = "pathmap") Pathmap pathmapForward, Model model) {
-        Pathmap pathmapBack = new Pathmap();
-        Station currentStation = (Station) session.getAttribute("station");
-        Station nextStation = pathmapForward.getNextStation();
-        Float cost = pathmapForward.getCost();
-        
-        pathmapForward.setCurrentStation(currentStation);
-        pathmapBack.setCurrentStation(nextStation);
-        pathmapBack.setNextStation(currentStation);
-        pathmapBack.setCost(cost);
-        
-        List<Pathmap> pathmapList = (List<Pathmap>) session.getAttribute("pathmapList");
-        pathmapList.add(pathmapForward);
-        pathmapList.add(pathmapBack);
-        
-        List<Station> nextStationList = (List<Station>) session.getAttribute("nextStationList");
-        nextStationList.remove(nextStation);
-        
-        session.setAttribute("pathmapList", pathmapList);
-        session.setAttribute("nextStationList", nextStationList);
-        
-//        model.addAttribute("nextStationList", nextStationList);
-        return "stations";
-    }
-    
-    @RequestMapping(method = RequestMethod.GET, value = "stations/{action}/{id}")
-    public String handleStationAction(HttpSession session, @PathVariable Long id, @PathVariable String action, Model model) {
-        Station station = (Station) stationService.getById(id);
-        if (action.equalsIgnoreCase("editStation")) {
-            List<Pathmap> pathmapList = new ArrayList<Pathmap>();
-            pathmapList.addAll(station.getCurrentStations());
-            pathmapList.addAll(station.getNextStations());
-            
-            List<Station> nextStationList = stationService.getStationList();
-            for (Pathmap pathmap: pathmapList) {
-                if (nextStationList.contains(pathmap.getNextStation())) 
-                    nextStationList.remove(pathmap.getNextStation());
-            }
-            model.addAttribute("nextStationList", nextStationList);
-            session.setAttribute("nextStationList", nextStationList);
-            session.setAttribute("pathmapList", pathmapList);
-            session.setAttribute("station", station);
-            return "stations";
-        } else if (action.equalsIgnoreCase("deleteStation")) {
-            stationService.delete(station);//.delete(project);
+    public String addStation(HttpSession session, @RequestBody StationFormDTO stationFormDTO) {
+        StationDTO station = stationFormDTO.getStation();
+        List<RelationDTO> relationList = stationFormDTO.getRelationList();
+        String newStationName = stationFormDTO.getNewStationName();
+        try {
+            stationService.createStation(station, newStationName, relationList);
+            session.setAttribute("msg", "successfuly!");
+        } catch (TrainHasTickets ex) {
+            Logger.getLogger(StationController.class.getName()).log(Level.SEVERE, null, ex);
+            session.setAttribute("error", ex.getMessage());
+        } catch (RemoveException ex) {
+            Logger.getLogger(StationController.class.getName()).log(Level.SEVERE, null, ex);
+            session.setAttribute("error", "Error, can't delete station");
+        } catch (DataStoreException ex) {
+            Logger.getLogger(StationController.class.getName()).log(Level.SEVERE, null, ex);
+            session.setAttribute("error", "Error in application");
         }
         return "redirect:/stations";
     }
     
-    @RequestMapping(method = RequestMethod.GET, value = "stations/deleteRealtion/{stationCurrentSelector}/{stationNextSelector}")
-    public String deleteNewRelation(HttpSession session, @PathVariable String stationCurrentSelector, @PathVariable String stationNextSelector, Model model) {
-        List<Pathmap> pathmapList = (List<Pathmap>) session.getAttribute("pathmapList");
-        List<Station> nextStationList = (List<Station>) session.getAttribute("nextStationList");
-        Station relationsOwner = (Station) session.getAttribute("station");
-        for(Iterator<Pathmap> iterator = pathmapList.iterator(); iterator.hasNext();) {
-            Pathmap pathmap = iterator.next();
-            Station stationCurrent = pathmap.getCurrentStation();
-            Station stationNext = pathmap.getNextStation();
-            if ((stationCurrentSelector.equals(stationCurrent.getName()) && stationNextSelector.equals(stationNext.getName())) ||
-                (stationCurrentSelector.equals(stationNext.getName()) && stationNextSelector.equals(stationCurrent.getName()))) {
-                    if (!relationsOwner.getName().equals(stationNext.getName())) {
-                        nextStationList.add(stationNext);
-                    }
-                    iterator.remove();
-                    //stationService.delete(pathmap);
+    @RequestMapping(method = RequestMethod.GET, value = "stations/editStation/{id}")
+    @ResponseBody
+    public StationFormDTO editStation(@PathVariable Long id) {
+        StationDTO stationDTO = (StationDTO) stationService.getById(id);
+        List<RelationDTO> relationListDTO = stationService.getRelationList(stationDTO);
+        List<StationDTO> nextStationListDTO = stationService.getStationList();
+        for (RelationDTO relationDTO : relationListDTO) {
+            for (int i = 0; i < nextStationListDTO.size(); i++) {
+                if (nextStationListDTO.get(i).getName().equals(relationDTO.getNextStationName())) {
+                    nextStationListDTO.remove(nextStationListDTO.get(i));
+                }
             }
         }
-        session.setAttribute("nextStationList", nextStationList);
-        model.addAttribute("nextStationList", nextStationList);
-        session.setAttribute("pathmapList", pathmapList);
-        model.addAttribute("pathmapList", pathmapList);
-        return "stations";
+        StationFormDTO stationFormDTO = new StationFormDTO(stationDTO,
+                                                           nextStationListDTO,
+                                                           relationListDTO);
+        return stationFormDTO;
     }
-    
-//    @RequestMapping(method = RequestMethod.GET, value = "stations/deleteRelation/{pathmap}")
-//    public String deleteNewRelation(HttpSession session, @PathVariable Pathmap pathmap) {
-//        List<Pathmap> pathmapList = (List<Pathmap>) session.getAttribute("pathmapList");
-//        String stationCurrentSelector = pathmap.getCurrentStation().getName();
-//        String stationNextSelector = pathmap.getCurrentStation().getName();
-//        for(Pathmap pathmap : pathmapList) {
-//            Station stationCurrent = pathmap.getCurrentStation();
-//            Station stationNext = pathmap.getNextStation();
-//            if ((stationCurrentSelector.equals(stationCurrent) && stationNextSelector.equals(stationNext)) ||
-//                (stationCurrentSelector.equals(stationNext) && stationNextSelector.equals(stationCurrent))) {
-//                    if (!"this".equals(stationNext)) {
-//                        List<Station> nextStationList = (List<Station>) session.getAttribute("nextStationList");
-//                        nextStationList.add(stationNext);
-//                        session.setAttribute("nextStationList", nextStationList);
-//                    }
-//                    stationService.delete(pathmap);
-//            }
-//        }
-//        return "stations";
-//    }
-    
+
+    @RequestMapping(method = RequestMethod.GET, value = "stations/deleteStation/{id}")
+    public String deleteStation(HttpSession session, @PathVariable Long id) {
+        try {
+            stationService.delete(id);
+        } catch (TrainHasTickets ex) {
+            Logger.getLogger(StationController.class.getName()).log(Level.SEVERE, null, ex);
+            session.setAttribute("error", ex.getMessage());
+        } catch (RemoveException ex) {
+            Logger.getLogger(StationController.class.getName()).log(Level.SEVERE, null, ex);
+            session.setAttribute("error", "Error, can't delete station");
+        } catch (FindException ex) {
+            Logger.getLogger(StationController.class.getName()).log(Level.SEVERE, null, ex);
+            session.setAttribute("error", "Error, can't delete station");
+        }
+        return "redirect:/stations";
+    }
+
     @InitBinder
     public void initBinder(ServletRequestDataBinder binder) {
         binder.registerCustomEditor(Station.class, "nextStation", new PropertyEditorSupport() {
@@ -201,7 +122,7 @@ public class StationController {
             public void setAsText(String text) {
                 if (text instanceof String) {
                     Long nextStationId = Long.parseLong(text);
-                    Station nextStation = (Station) stationService.getById(nextStationId);
+                    StationDTO nextStation = (StationDTO) stationService.getById(nextStationId);
                     setValue(nextStation);
 
                 }

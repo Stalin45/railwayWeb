@@ -10,8 +10,10 @@
     
     <bean name="userDetailsServiceImpl" class="com.tschool.railwayweb.service.UserDetailsServiceImpl"></bean>
     <bean name="userService" class="com.tschool.railwayweb.service.UserService"></bean>
+    <bean name="ticketService" class="com.tschool.railwayweb.service.TicketService"></bean>
+    <bean name="trainService" class="com.tschool.railwayweb.service.TrainService"></bean>
+    <bean name="trainTypeService" class="com.tschool.railwayweb.service.TrainTypeService"></bean>
     <bean name="stationService" class="com.tschool.railwayweb.service.StationService"></bean>
-    <bean name="pathmapService" class="com.tschool.railwayweb.service.PathmapService"></bean>
     <bean name="pathService" class="com.tschool.railwayweb.service.PathService"></bean>
     
 </beans>

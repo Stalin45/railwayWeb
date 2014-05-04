@@ -1,6 +1,8 @@
 package com.tschool.railwayweb.service;
 
 import com.tschool.railwayweb.dao.RailwayDAO;
+import com.tschool.railwayweb.dto.RelationDTO;
+import com.tschool.railwayweb.dto.StationDTO;
 import com.tschool.railwayweb.model.*;
 import com.tschool.railwayweb.util.exception.*;
 import java.util.ArrayList;
@@ -22,302 +24,158 @@ public class StationService {
     private RailwayDAO rDAO = new RailwayDAO();
     
     @Transactional
-    public List<Station> getStationList() {
-        List<Station> stationList = null;
+    public List<StationDTO> getStationList() {
+        List<StationDTO> stationListDTO = new ArrayList<StationDTO>();
         try {
-             stationList = rDAO.getEntityList(Station.class);
+             List<Station> stationList = rDAO.getEntityList(Station.class);
+             for (Station station : stationList) {
+                 stationListDTO.add(new StationDTO(station.getId(), station.getName()));
+             }
         } catch (FindException ex) {
             Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return stationList;
+        return stationListDTO;
     }
     
     @Transactional
-    public Station getById(Long privateKey) {
-        Station station = null;
+    public List<String> getStationNameList() {
+        List<String> stationNameList = new ArrayList<String>();
         try {
-            station = (Station) rDAO.findByPrimaryKey(Station.class, privateKey);
-            Hibernate.initialize(station.getNextStations());
+            List<Station> stationList = rDAO.getEntityList(Station.class);
+            for (Station station : stationList) {
+                stationNameList.add(station.getName());
+            }
+        } catch (FindException ex) {
+        }
+        return stationNameList;
+    }
+
+    @Transactional
+    public StationDTO getById(Long privateKey) {
+        StationDTO stationDTO = null;
+        try {
+            Station station = (Station) rDAO.findByPrimaryKey(Station.class, privateKey);
+            stationDTO = new StationDTO(station.getId(), station.getName());
         } catch (FindException ex) {
             Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return station;
+        return stationDTO;
     }
-    
-//    @Transactional
-//    public void createStation(Station station, List<Pathmap> pathmapList) {
-//        String newName = station.getName();
-//        try {
-//            if (station.getId() != null) {
-//                station = (Station) rDAO.findByPrimaryKey(Station.class, station.getId());
-//                station.setName(newName);
-//                rDAO.update(station);
-//            } else {
-//            rDAO.addEntity(station);
-//            }
-//            rDAO.deleteRelationsByStation(station);
-////            for(int i=0; i<station.getCurrentStations().size(); i++)
-////                rDAO.detach(station.getCurrentStations().get(i));
-////            for(int i=0; i<station.getNextStations().size(); i++)
-////                rDAO.detach(station.getNextStations().get(i));
-//            rDAO.detach(station);
-//            if (pathmapList != null)
-//                //LazyInitializingException
-//                for (int i=0; i<pathmapList.size(); i++) {
-//                    pathmapList.get(i).getCurrentStation().setCurrentStations(null);
-//                    pathmapList.get(i).getCurrentStation().setNextStations(null);
-//                    pathmapList.get(i).getCurrentStation().setDestination(null);
-//                    pathmapList.get(i).getNextStation().setCurrentStations(null);
-//                    pathmapList.get(i).getNextStation().setNextStations(null);
-//                    pathmapList.get(i).getNextStation().setDestination(null);
-//                }
-//                rDAO.addEntityList(pathmapList);
-//        } catch (CreateException ex) {
-//            Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
-//        } catch (RemoveException ex) {
-//            Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
-//        } catch (FindException ex) {
-//            Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
-//        } catch (UpdateException ex) {
-//            Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
-//        } catch (DataStoreException ex) {
-//            Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
-//        }
-//    }
-    
+
     @Transactional
-    public void createStation(Station station, List<Pathmap> pathmapList) {
-        String newName = station.getName();
+    public void createStation(StationDTO stationDTO, String newStationName, List<RelationDTO> relationListDTO) throws TrainHasTickets, RemoveException, DataStoreException {
         try {
-            List<Pathmap> currentStations = new ArrayList<Pathmap>();
-            List<Pathmap> nextStations = new ArrayList<Pathmap>();
-            for (Pathmap pathmap : pathmapList) {
-                if (pathmap.getCurrentStation().getName().equals(newName)) {
-                    currentStations.add(pathmap);
+            List<Relation> currentStationList = new ArrayList<Relation>();
+            List<Relation> nextStationList = new ArrayList<Relation>();
+            Station station = null;
+            String oldStationName = stationDTO.getName();
+            if (stationDTO.getId() != null) {
+                station = (Station) rDAO.findByPrimaryKey(Station.class, stationDTO.getId());
+                station.setName(newStationName);
+            } else {
+                station = new Station();
+                station.setName(newStationName);
+            }
+            for (RelationDTO relationDTO : relationListDTO) {
+                if (oldStationName.equals(relationDTO.getCurrentStationName())) {
+                    Station relatedStation = new Station(relationDTO.getNextStationId(), relationDTO.getNextStationName());
+                    Relation relation = new Relation(station, relatedStation, relationDTO.getCost());
+                    currentStationList.add(relation);
                 } else {
-                    nextStations.add(pathmap);
+                    Station relatedStation = new Station(relationDTO.getCurrentStationId(), relationDTO.getCurrentStationName());
+                    Relation relation = new Relation(relatedStation, station, relationDTO.getCost());
+                    nextStationList.add(relation);
                 }
             }
-            if (station.getId() != null) {
-                station = (Station) rDAO.findByPrimaryKey(Station.class, station.getId());
-                station.setName(newName);
-                station.setCurrentStations(currentStations);
-                station.setNextStations(nextStations);
-                rDAO.update(station);
-            } else {
-                station.setCurrentStations(currentStations);
-                station.setNextStations(nextStations);
-                rDAO.addEntity(station);
+
+            ///////////////////////////
+            List<Destination> destinationList = station.getDestination();
+            if (destinationList != null) {
+                for (Destination destination : destinationList) {
+                    List<Train> trainList = destination.getPath().getTrain();
+                    if (trainList != null) {
+                        for (Train train : trainList) {
+                            if (!train.getTicketList().isEmpty()) {
+                                throw new TrainHasTickets("Train with this station has tickets");
+                            }
+                        }
+                    }
+                }
             }
+            if (station.getCurrentStations() != null) {
+                for (int i = 0; i < station.getCurrentStations().size(); i++) {
+                    Relation relation = station.getCurrentStations().get(i);
+                    rDAO.remove(relation);
+                }
+            }
+            if (station.getNextStations() != null) {
+                for (int i = 0; i < station.getNextStations().size(); i++) {
+                    Relation relation = station.getNextStations().get(i);
+                    rDAO.remove(relation);
+                }
+            }
+            if (station.getCurrentStations() != null)
+                station.getCurrentStations().clear();
+            if (station.getNextStations() != null) 
+                station.getNextStations().clear();
+            station.setCurrentStations(currentStationList);
+            station.setNextStations(nextStationList);
+            ////////////////////////
+            rDAO.addEntity(station);
         } catch (FindException ex) {
-            Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (UpdateException ex) {
             Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
         } catch (CreateException ex) {
             Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
+
     @Transactional
-    public List<Pathmap> getPathmapList(Station station) {
-        List<Pathmap> pathmapList = null;
+    public List<RelationDTO> getRelationList(StationDTO stationDTO) {
+        List<RelationDTO> relationListDTO = new ArrayList<RelationDTO>();
         try {
-             pathmapList = rDAO.getPathmapList(station);
+            List<Relation> relationList = rDAO.getRelationList(stationDTO.getId());
+            for (Relation relation : relationList) {
+                relationListDTO.add(new RelationDTO(relation.getCurrentStation().getId(),
+                        relation.getCurrentStation().getName(),
+                        relation.getNextStation().getId(),
+                        relation.getNextStation().getName(),
+                        relation.getCost()));
+            }
         } catch (FindException ex) {
             Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return pathmapList;
+        return relationListDTO;
+    }
+
+    @Transactional
+    public List<StationDTO> getRelatedStations(StationDTO stationDTO) {
+        List<StationDTO> relatedStationListDTO = new ArrayList<StationDTO>();
+        try {
+            Station station = (Station) rDAO.findByPrimaryKey(Station.class, stationDTO.getId());
+            List<Relation> relationList = station.getCurrentStations();
+            for (Relation relation: relationList) {
+                relatedStationListDTO.add(new StationDTO(relation.getNextStation().getId(),relation.getNextStation().getName()));
+            }
+        } catch (FindException ex) {
+            Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return relatedStationListDTO;
     }
     
     @Transactional
-    public void delete(Station station) {
-        try {
-            rDAO.remove(station);
-        } catch (RemoveException ex) {
-            Logger.getLogger(PathmapService.class.getName()).log(Level.SEVERE, null, ex);
+    public void delete(Long stationId) throws TrainHasTickets, RemoveException, FindException {
+        Station station = (Station) rDAO.findByPrimaryKey(Station.class, stationId);
+        List<Destination> destinationList = station.getDestination();
+        if (destinationList != null)
+        for (Destination destination : destinationList) {
+            List<Train> trainList = destination.getPath().getTrain();
+            if (trainList != null)
+            for (Train train : trainList) {
+                if (!train.getTicketList().isEmpty()) {
+                    throw new TrainHasTickets("Train with this station has tickets");
+                }
+            }
         }
+        rDAO.remove(station);
     }
-    
-    @Transactional
-    public void delete(Pathmap pathmap) {
-        try {
-            rDAO.remove(pathmap);
-        } catch (RemoveException ex) {
-            Logger.getLogger(PathmapService.class.getName()).log(Level.SEVERE, null, ex);
-        }
-    }
-    
-//    
-//    
-//    
-//    private Boolean isSecondTicket(Passenger passenger, Long timetableId) {
-//        List<Ticket> ticketList = passenger.getTicketList();
-//        
-//        for (Ticket ticket : ticketList) {
-//            TimeTable timetable = ticket.getTimetable();
-//            Long id = timetable.getId();
-//            if (id.toString().equals(timetableId.toString()))
-//                return true;
-//        }
-//        return false;
-//    }
-//    
-//    public CommandResponse createTicket(Ticket ticket, Passenger passenger) {
-//        CommandResponse response = new CommandResponse();
-//        int resultCode = 0;
-//        try {
-//            rDAO.beginTransaction();
-//            
-//            TimeTable timetable = ticket.getTimetable();
-//            
-//            boolean isPassengerExists;
-//            try {
-//                passenger = (Passenger) rDAO.findByPrimaryKey(Passenger.class, passenger.getPassport());
-//                isPassengerExists = true;
-//            } catch (FindException ex) {
-//                isPassengerExists = false;
-//            }
-//            if (isPassengerExists)
-//                if (isSecondTicket(passenger, timetable.getId()))
-//                    throw new SecondTicketException("This passenger has been already registered");
-//            
-//            rDAO.addEntity(passenger);
-//            
-//            timetable = (TimeTable) rDAO.findByPrimaryKey(TimeTable.class, timetable.getId());
-//            Integer freeSeats = timetable.getFreeSeats();
-//            if (freeSeats == 0) 
-//                throw new TicketAbsenceException("Tickets on this variant has just ended");
-//            freeSeats--;
-//            timetable.setFreeSeats(freeSeats);
-//            
-//            rDAO.addEntity(ticket);
-//            rDAO.commitTransaction();
-//            resultCode = 1;
-//        } catch (Exception ex) {
-//            response.setException(ex);
-//            response.setResultCode(resultCode);
-//            return response;
-//        } 
-//        response.setResultCode(resultCode);
-//        return response;
-//    }
-//    
-//    public CommandResponse createTimetable(TimeTable timeTable) {
-//        CommandResponse response = new CommandResponse();
-//        int resultCode = 0;
-//        try {
-//            rDAO.beginTransaction();
-//            rDAO.addEntity(timeTable);
-//            rDAO.commitTransaction();
-//            resultCode = 1;
-//        } catch (Exception ex) {
-//            response.setException(ex);
-//            response.setResultCode(resultCode);
-//            return response;
-//        } 
-//        response.setResultCode(resultCode);
-//        return response;
-//    }
-//
-//    public CommandResponse createTrain(Train train) {
-//        CommandResponse response = new CommandResponse();
-//        int resultCode = 0;
-//        try {
-//            rDAO.beginTransaction();
-//            rDAO.addEntity(train);
-//            rDAO.commitTransaction();
-//            resultCode = 1;
-//        } catch (Exception ex) {
-//            response.setException(ex);
-//            response.setResultCode(resultCode);
-//            return response;
-//        } 
-//        response.setResultCode(resultCode);
-//        return response;
-//    }
-//
-//    public CommandResponse getPathsFitStations(String stationFrom, String stationTo) {
-//        CommandResponse response = new CommandResponse();
-//        try {
-//            rDAO.beginTransaction();
-//            List<Path> pathList = rDAO.getEntityList(Path.class);
-//            List<Path> resultPaths = rDAO.whichPathsFitStations(pathList, stationFrom, stationTo);
-//            rDAO.commitTransaction();
-//            response.putContent(ContentKey.PATH_LIST, resultPaths);
-//        } catch (Exception ex) {
-//            response.setException(ex);
-//            return response;
-//        } 
-//        return response;
-//    }
-//    
-//    public CommandResponse getTimetablesFitPathsDate(String stationFrom, String stationTo, Date date) {
-//        CommandResponse response = new CommandResponse();
-//        try {
-//            rDAO.beginTransaction();
-//            List<Path> pathList = rDAO.getEntityList(Path.class);
-//            List<Path> fitPaths = rDAO.whichPathsFitStations(pathList, stationFrom, stationTo);
-//            List<TimeTable> timetableList = rDAO.whichTimetablesFitPathsDate(date, fitPaths);
-//            rDAO.commitTransaction();
-//            response.putContent(ContentKey.TIMETABLE_LIST, timetableList);
-//        } catch (Exception ex) {
-//            response.setException(ex);
-//            return response;
-//        } 
-//        return response;
-//    }
-//    
-//    public CommandResponse getTrainPath() {
-//        CommandResponse response = new CommandResponse();
-//        try {
-//            rDAO.beginTransaction();
-//            List<Train> trainList = rDAO.getEntityList(Train.class);
-//            List<Path> pathList = rDAO.getEntityList(Path.class);
-//            rDAO.commitTransaction();
-//            response.putContent(ContentKey.TRAIN_LIST, trainList);
-//            response.putContent(ContentKey.PATH_LIST, pathList);
-//        } catch (Exception ex) {
-//            response.setException(ex);
-//            return response;
-//        } 
-//        return response;
-//    }
-//    
-//    public CommandResponse getTrainTypeList() {
-//        CommandResponse response = new CommandResponse();
-//        try {
-//            rDAO.beginTransaction();
-//            List<TrainType> trainTypeList = rDAO.getEntityList(TrainType.class);
-//            response.putContent(ContentKey.TRAIN_TYPE_LIST, trainTypeList);
-//            rDAO.commitTransaction();
-//        } catch (Exception ex) {
-//            response.setException(ex);
-//            return response;
-//        } 
-//        return response;
-//    }
-//    
-//    
-//    
-//    
-//    public CommandResponse isSignedUp(SuperUser userToFind) {
-//        CommandResponse response = new CommandResponse();
-//        int resultCode = 0;
-//        try {
-//            rDAO.beginTransaction();
-//            SuperUser user = (SuperUser) rDAO.findByPrimaryKey(SuperUser.class, userToFind.getLogin());
-//            rDAO.commitTransaction();
-//            if (userToFind.getPassword().equals(user.getPassword())) {
-//                if (user instanceof User)
-//                    resultCode = 1;
-//                else resultCode = 2;
-//            }
-//        } catch (Exception ex) {
-//            response.setException(ex);
-//            response.setResultCode(resultCode);
-//            return response;
-//        } 
-//        response.setResultCode(resultCode);
-//        return response;
-//    }
 }

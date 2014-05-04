@@ -1,6 +1,7 @@
 package com.tschool.railwayweb.model;
 
 import java.io.Serializable;
+import java.util.Objects;
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -13,18 +14,18 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 
 @Entity
-@Table(name="Pathmap")
-public class Pathmap implements Serializable {
+@Table(name="Relation")
+public class Relation implements Serializable {
     
     private Long id;
     private Station currentStation;
     private Station nextStation;
     private Float cost;
     
-    public Pathmap() {
+    public Relation() {
     }
 
-    public Pathmap(Station currentStation, Station nextStation, Float cost) {
+    public Relation(Station currentStation, Station nextStation, Float cost) {
         this.currentStation = currentStation;
         this.nextStation = nextStation;
         this.cost = cost;
@@ -37,13 +38,13 @@ public class Pathmap implements Serializable {
         return id;
     }
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER, cascade = {CascadeType.MERGE, CascadeType.REFRESH})
     @JoinColumn(name = "current_station")
     public Station getCurrentStation() {
         return currentStation;
     }
 
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne(fetch = FetchType.EAGER, cascade = {CascadeType.MERGE, CascadeType.REFRESH})
     @JoinColumn(name = "next_station")
     public Station getNextStation() {
         return nextStation;
@@ -68,5 +69,31 @@ public class Pathmap implements Serializable {
 
     public void setCost(Float cost) {
         this.cost = cost;
+    }
+
+    @Override
+    public int hashCode() {
+        int hash = 7;
+        hash = 13 * hash + Objects.hashCode(this.currentStation);
+        hash = 13 * hash + Objects.hashCode(this.nextStation);
+        return hash;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Relation other = (Relation) obj;
+        if (!Objects.equals(this.currentStation, other.currentStation)) {
+            return false;
+        }
+        if (!Objects.equals(this.nextStation, other.nextStation)) {
+            return false;
+        }
+        return true;
     }
 }

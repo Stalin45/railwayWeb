@@ -1,6 +1,6 @@
 package com.tschool.railwayweb.controller;
 
-import com.tschool.railwayweb.model.Pathmap;
+import com.tschool.railwayweb.model.Relation;
 import com.tschool.railwayweb.model.Station;
 import com.tschool.railwayweb.model.User;
 import com.tschool.railwayweb.service.UserService;

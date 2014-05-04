@@ -21,12 +21,13 @@ public class Station implements Serializable {
     private Long id;
     private String name;
     private List<Destination> destination;
-    private List<Pathmap> currentStations;
-    private List<Pathmap> nextStations;
+    private List<Relation> currentStations;
+    private List<Relation> nextStations;
     
     public Station() {}
  
-    public Station(String name) {
+    public Station(Long id, String name) {
+        this.id = id;
         this.name = name;
     }
     
@@ -47,13 +48,13 @@ public class Station implements Serializable {
         return destination;
     }
     
-    @OneToMany(fetch = FetchType.EAGER, cascade = CascadeType.ALL, mappedBy = "currentStation")
-    public List<Pathmap> getCurrentStations() {
+    @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "currentStation")
+    public List<Relation> getCurrentStations() {
         return currentStations;
     }
 
     @OneToMany(fetch = FetchType.LAZY, cascade = CascadeType.ALL, mappedBy = "nextStation")
-    public List<Pathmap> getNextStations() {
+    public List<Relation> getNextStations() {
         return nextStations;
     }
 
@@ -69,11 +70,11 @@ public class Station implements Serializable {
         this.destination = destination;
     }
 
-    public void setCurrentStations(List<Pathmap> currentStations) {
+    public void setCurrentStations(List<Relation> currentStations) {
         this.currentStations = currentStations;
     }
 
-    public void setNextStations(List<Pathmap> nextStations) {
+    public void setNextStations(List<Relation> nextStations) {
         this.nextStations = nextStations;
     }
     

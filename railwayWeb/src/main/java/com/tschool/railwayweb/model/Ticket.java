@@ -20,19 +20,17 @@ import javax.persistence.TemporalType;
 public class Ticket implements Serializable {
     
     private Long id;
-    private TimeTable timetable;
+    private Train train;
     private Long totalCost;
     private Passenger passenger;
-//    private User user;
-
+    
     public Ticket() {
     }
 
-    public Ticket(TimeTable timetable, Long totalCost, Passenger passenger) {
-        this.timetable = timetable;
+    public Ticket(Train train, Long totalCost, Passenger passenger) {
+        this.train = train;
         this.totalCost = totalCost;
         this.passenger = passenger;
-//        this.user = user;
     }
     
     @Id
@@ -42,10 +40,10 @@ public class Ticket implements Serializable {
         return id;
     }
     
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "timetable_id")
-    public TimeTable getTimetable() {
-        return timetable;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "train_id")
+    public Train getTrain() {
+        return train;
     }
 
     @Column(name = "total_cost")
@@ -57,16 +55,7 @@ public class Ticket implements Serializable {
     @JoinColumn(name = "passenger_id")
     public Passenger getPassenger() {
         return passenger;
-    }
-
-    
-
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "user_id")
-//    public User getUser() {
-//        return user;
-//    }
-    
+    }  
     
     public void setId(Long id) {
         this.id = id;
@@ -76,12 +65,8 @@ public class Ticket implements Serializable {
         this.passenger = passenger;
     }
 
-//    public void setUser(User user) {
-//        this.user = user;
-//    }
-
-    public void setTimetable(TimeTable timetable) {
-        this.timetable = timetable;
+    public void setTrain(Train train) {
+        this.train = train;
     }
 
     public void setTotalCost(Long totalCost) {

@@ -1,8 +1,13 @@
 package com.tschool.railwayweb.controller;
 
+import com.tschool.railwayweb.dto.DestinationDTO;
+import com.tschool.railwayweb.dto.PathDTO;
+import com.tschool.railwayweb.dto.PathFormDTO;
+import com.tschool.railwayweb.dto.RelationDTO;
+import com.tschool.railwayweb.dto.StationDTO;
 import com.tschool.railwayweb.model.Destination;
 import com.tschool.railwayweb.model.Path;
-import com.tschool.railwayweb.model.Pathmap;
+import com.tschool.railwayweb.model.Relation;
 import com.tschool.railwayweb.model.Station;
 import com.tschool.railwayweb.service.PathService;
 import com.tschool.railwayweb.service.StationService;
@@ -20,6 +25,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
@@ -31,6 +37,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.SessionAttributes;
 import org.springframework.web.servlet.ModelAndView;
 
@@ -46,83 +53,89 @@ public class PathController {
     @Qualifier(value = "stationService")
     private StationService stationService;
     
-    @ModelAttribute("pathList")
-    public List<Path> getPathList() {
-        return pathService.getPathList();
-    }
-    
-    @ModelAttribute("destination")
-    public Destination getDestination() {
-        return new Destination();
-    }
-    
-    @ModelAttribute("authentication")
-    public Authentication getPrincipal() {
-        return SecurityContextHolder.getContext().getAuthentication();
-    }
-    
     @RequestMapping(method = RequestMethod.GET, value = "/paths")
     public String initForm(HttpSession session) {
-        Path path = new Path();
+        PathDTO path = new PathDTO();
         
         session.setAttribute("path", path);
+        session.setAttribute("pathList", pathService.getPathList());
         session.setAttribute("lastNumber", 1);
         session.setAttribute("nextStationList", stationService.getStationList());
-        session.setAttribute("destinationList", new ArrayList<Destination>());
+        session.setAttribute("destinationList", new ArrayList<DestinationDTO>());
         return "paths";
     }
     
-    @RequestMapping(method = RequestMethod.POST, value = "paths/createPath")
-    public String createPath(@ModelAttribute("path") Path path, Model model) {
-        List<Destination> destinationList = (List<Destination>) model.asMap().get("destinationList");
+    @RequestMapping(method = RequestMethod.POST, value = "paths/addPath")
+    public String addPath(HttpSession session) {
+        PathDTO path = (PathDTO) session.getAttribute("path");
+        List<DestinationDTO> destinationList = (List<DestinationDTO>) session.getAttribute("destinationList");
         pathService.createPath(path, destinationList);
         return "redirect:/paths";
     }
     
     @RequestMapping(method = RequestMethod.POST, value = "paths/pushDestination")
-    public String pushDestination(HttpSession session, @ModelAttribute(value = "destination") Destination destination) {
-        Integer lastNumber = (Integer) session.getAttribute("lastNumber");
-        destination.setNumber(lastNumber);
-        
-        Station nextStation = destination.getStation();
-        
-        List<Destination> destinationList = (List<Destination>) session.getAttribute("destinationList");
-        destinationList.add(destination);
-        
-        List<Station> nextStationList = new ArrayList<Station>();
-        List<Pathmap> pathmapList = nextStation.getCurrentStations();
-        for (Pathmap pathmap: pathmapList) {
-            nextStationList.add(pathmap.getNextStation());
+    @ResponseBody
+    public PathFormDTO pushDestination(HttpSession session, @RequestParam(value = "stationId") Long stationId,
+                                                               @RequestParam(value = "stationName") String stationName,
+                                                               @RequestParam(value = "timeString") String timeString) {
+        try {
+            Integer lastNumber = (Integer) session.getAttribute("lastNumber");
+            PathDTO path = (PathDTO) session.getAttribute("path");
+            
+            SimpleDateFormat sdf = new SimpleDateFormat("hh:mm");
+            Date time = sdf.parse(timeString);
+            
+            DestinationDTO destinationDTO = new DestinationDTO(lastNumber,path.getId(),stationId,stationName,time);
+            
+            List<DestinationDTO> destinationListDTO = (List<DestinationDTO>) session.getAttribute("destinationList");
+            destinationListDTO.add(destinationDTO);
+            
+            StationDTO station = new StationDTO(destinationDTO.getStationId(),destinationDTO.getStationName());
+            
+            List<StationDTO> nextStationListDTO = stationService.getRelatedStations(station);
+            
+            session.setAttribute("destinationList", destinationListDTO);
+            session.setAttribute("nextStationList", nextStationListDTO);
+            session.setAttribute("lastNumber", ++lastNumber);
+            
+            PathFormDTO pathFormDTO = new PathFormDTO(path,
+                    nextStationListDTO,
+                    destinationListDTO);
+            return pathFormDTO;
+        } catch (ParseException ex) {
+            Logger.getLogger(PathController.class.getName()).log(Level.SEVERE, null, ex);
         }
-        session.setAttribute("destinationList", destinationList);
-        session.setAttribute("nextStationList", nextStationList);
-        session.setAttribute("lastNumber", ++lastNumber);
-        return "paths";
+        return null;
     }
     
-    @RequestMapping(method = RequestMethod.GET, value = "paths/{action}/{number}")
-    public String handleStationAction(HttpSession session, @PathVariable Long number, @PathVariable String action, Model model) {
-        Path path = (Path) pathService.getById(number);
-        if (action.equalsIgnoreCase("editPath")) {
-            List<Destination> destinationList = new ArrayList<Destination>();
-            destinationList.addAll(path.getDestination());
-            Collections.sort(destinationList);
-            //number
-            Station lastStation = destinationList.get(destinationList.size() - 1).getStation();
-            List<Station> nextStationList = new ArrayList<Station>();
-            List<Pathmap> pathmapList = lastStation.getCurrentStations();
-            for (Pathmap pathmap : pathmapList) {
-                nextStationList.add(pathmap.getNextStation());
+    @RequestMapping(method = RequestMethod.GET, value = "paths/editPath/{id}")
+    @ResponseBody
+    public PathFormDTO editPath(HttpSession session, @PathVariable Long id) {
+        PathDTO pathDTO = (PathDTO) pathService.getById(id);
+        List<DestinationDTO> destinationListDTO = pathService.getDestinationList(pathDTO);
+        List<StationDTO> nextStationListDTO = stationService.getStationList();
+        for (DestinationDTO destinationDTO : destinationListDTO) {
+//                if (nextStationList.contains(relation.getNextStation()))
+            for (int i = 0; i < nextStationListDTO.size(); i++) {
+                ////////////////////////////////////////////////////////////////////////////////////////////
+                if (nextStationListDTO.get(i).getName().equals(destinationDTO.getStationName())) {
+                    nextStationListDTO.remove(nextStationListDTO.get(i));
+                }
             }
-            session.setAttribute("nextStationList", nextStationList);
-            session.setAttribute("destinationList", destinationList);
-            session.setAttribute("path", path);
-            Integer lastNumber = destinationList.get(destinationList.size() - 1).getNumber();
-            session.setAttribute("lastNumber", ++lastNumber);
-            return "paths";
-        } else if (action.equalsIgnoreCase("deletePath")) {
-            pathService.delete(path);
         }
+        session.setAttribute("lastNumber", destinationListDTO.size()+1);
+        session.setAttribute("nextStationList", nextStationListDTO);
+        session.setAttribute("destinationList", destinationListDTO);
+        session.setAttribute("path", pathDTO);
+        PathFormDTO pathFormDTO = new PathFormDTO(pathDTO,
+                                                  nextStationListDTO,
+                                                  destinationListDTO);
+        return pathFormDTO;
+    }
+
+    @RequestMapping(method = RequestMethod.GET, value = "paths/deletePath/{id}")
+    public String deletePath(HttpSession session, @PathVariable Long id) {
+        pathService.delete(id);
         return "redirect:/paths";
     }
     
@@ -157,13 +170,13 @@ public class PathController {
         
         binder.registerCustomEditor(Station.class, "station", new PropertyEditorSupport() {
 
-            public void setAsText(String text) {
-                if (text instanceof String) {
-                    Long nextStationId = Long.parseLong(text);
-                    Station nextStation = (Station) stationService.getById(nextStationId);
-                    setValue(nextStation);
-                }
-            }
+//            public void setAsText(String text) {
+//                if (text instanceof String) {
+//                    Long nextStationId = Long.parseLong(text);
+//                    Station nextStation = (Station) stationService.getById(nextStationId);
+//                    setValue(nextStation);
+//                }
+//            }
 
             public String getAsText() {
                 Object value = getValue();
