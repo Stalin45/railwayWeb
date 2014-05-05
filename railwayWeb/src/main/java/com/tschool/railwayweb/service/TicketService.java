@@ -34,9 +34,7 @@ public class TicketService {
     @Transactional
     public void createTicket(TicketDTO ticketDTO) 
             throws FindException, SecondTicketException, EarlyDepartureException, IncorrectPassengerException, CreateException, NoFreeSeatsException {
-        //1. Check train exists
         Train train = (Train) rDAO.findByPrimaryKey(Train.class, ticketDTO.getTrainId());
-        //2. Check correctness of the passenger's data
         Passenger passenger = rDAO.getPassengerByPassport(ticketDTO.getPassport());
         if (passenger == null) {
             passenger = new Passenger(ticketDTO.getPassport(),ticketDTO.getName(),ticketDTO.getSecondName());
@@ -48,26 +46,22 @@ public class TicketService {
                 throw new IncorrectPassengerException("Passenger with the same passport has different name/surname!");
             }
         }
-        //3. Check if ticket is second
         List<Ticket> ticketList = rDAO.getTicketListByTrain(ticketDTO.getTrainId());
         for (Ticket ticket : ticketList) {
             if (ticket.getPassenger().getPassport().toString().equals(ticketDTO.getPassport().toString())) {
                 throw new SecondTicketException("This passenger has already bought the ticket!");
             }
         }
-        //4. Check if departure time is less than 10 min
         Calendar actualDate = Calendar.getInstance();
         actualDate.add(Calendar.MINUTE, 10);
         Calendar departureDateTime = Calendar.getInstance();
         List<Train> trainList = rDAO.getEntityList(Train.class);
         Date departureDate = train.getDate();
         Date departureTime = train.getPath().getDestination().get(0).getTime();
-        ////////////////////////////////////////////////////////////////////////////////////
         departureDateTime.setTimeInMillis(departureDate.getTime() + departureTime.getTime() + 3 * 60 * 60 * 1000);
         if (actualDate.compareTo(departureDateTime) > 0) {
             throw new EarlyDepartureException("Time, when train will departure, is less than 10 minutes!");
         }
-        //5. Check if train has free seats
         Integer freeSeats = train.getFreeSeats();
         if (freeSeats == 0) {
             throw new NoFreeSeatsException("The train has no free seats!");

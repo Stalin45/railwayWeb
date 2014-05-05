@@ -20,14 +20,17 @@ import org.springframework.transaction.annotation.Transactional;
 public class StationService {
     
     @Autowired
-    @Qualifier(value = "railwayDAO")
-    private RailwayDAO rDAO = new RailwayDAO();
+    private RailwayDAO<Station> stationDAO = new RailwayDAO<Station>();
+    
+    @Autowired
+    private RailwayDAO<Relation> relationDAO = new RailwayDAO<Relation>();
+    
     
     @Transactional
     public List<StationDTO> getStationList() {
         List<StationDTO> stationListDTO = new ArrayList<StationDTO>();
         try {
-             List<Station> stationList = rDAO.getEntityList(Station.class);
+             List<Station> stationList = stationDAO.getEntityList(Station.class);
              for (Station station : stationList) {
                  stationListDTO.add(new StationDTO(station.getId(), station.getName()));
              }
@@ -41,7 +44,7 @@ public class StationService {
     public List<String> getStationNameList() {
         List<String> stationNameList = new ArrayList<String>();
         try {
-            List<Station> stationList = rDAO.getEntityList(Station.class);
+            List<Station> stationList = stationDAO.getEntityList(Station.class);
             for (Station station : stationList) {
                 stationNameList.add(station.getName());
             }
@@ -54,7 +57,7 @@ public class StationService {
     public StationDTO getById(Long privateKey) {
         StationDTO stationDTO = null;
         try {
-            Station station = (Station) rDAO.findByPrimaryKey(Station.class, privateKey);
+            Station station = stationDAO.findByPrimaryKey(Station.class, privateKey);
             stationDTO = new StationDTO(station.getId(), station.getName());
         } catch (FindException ex) {
             Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
@@ -70,7 +73,7 @@ public class StationService {
             Station station = null;
             String oldStationName = stationDTO.getName();
             if (stationDTO.getId() != null) {
-                station = (Station) rDAO.findByPrimaryKey(Station.class, stationDTO.getId());
+                station = stationDAO.findByPrimaryKey(Station.class, stationDTO.getId());
                 station.setName(newStationName);
             } else {
                 station = new Station();
@@ -87,8 +90,6 @@ public class StationService {
                     nextStationList.add(relation);
                 }
             }
-
-            ///////////////////////////
             List<Destination> destinationList = station.getDestination();
             if (destinationList != null) {
                 for (Destination destination : destinationList) {
@@ -105,13 +106,13 @@ public class StationService {
             if (station.getCurrentStations() != null) {
                 for (int i = 0; i < station.getCurrentStations().size(); i++) {
                     Relation relation = station.getCurrentStations().get(i);
-                    rDAO.remove(relation);
+                    relationDAO.remove(relation);
                 }
             }
             if (station.getNextStations() != null) {
                 for (int i = 0; i < station.getNextStations().size(); i++) {
                     Relation relation = station.getNextStations().get(i);
-                    rDAO.remove(relation);
+                    relationDAO.remove(relation);
                 }
             }
             if (station.getCurrentStations() != null)
@@ -120,8 +121,7 @@ public class StationService {
                 station.getNextStations().clear();
             station.setCurrentStations(currentStationList);
             station.setNextStations(nextStationList);
-            ////////////////////////
-            rDAO.addEntity(station);
+            stationDAO.addEntity(station);
         } catch (FindException ex) {
             Logger.getLogger(StationService.class.getName()).log(Level.SEVERE, null, ex);
         } catch (CreateException ex) {
@@ -133,7 +133,7 @@ public class StationService {
     public List<RelationDTO> getRelationList(StationDTO stationDTO) {
         List<RelationDTO> relationListDTO = new ArrayList<RelationDTO>();
         try {
-            List<Relation> relationList = rDAO.getRelationList(stationDTO.getId());
+            List<Relation> relationList = relationDAO.getRelationList(stationDTO.getId());
             for (Relation relation : relationList) {
                 relationListDTO.add(new RelationDTO(relation.getCurrentStation().getId(),
                         relation.getCurrentStation().getName(),
@@ -151,7 +151,7 @@ public class StationService {
     public List<StationDTO> getRelatedStations(StationDTO stationDTO) {
         List<StationDTO> relatedStationListDTO = new ArrayList<StationDTO>();
         try {
-            Station station = (Station) rDAO.findByPrimaryKey(Station.class, stationDTO.getId());
+            Station station = stationDAO.findByPrimaryKey(Station.class, stationDTO.getId());
             List<Relation> relationList = station.getCurrentStations();
             for (Relation relation: relationList) {
                 relatedStationListDTO.add(new StationDTO(relation.getNextStation().getId(),relation.getNextStation().getName()));
@@ -164,7 +164,7 @@ public class StationService {
     
     @Transactional
     public void delete(Long stationId) throws TrainHasTicketsException, RemoveException, FindException {
-        Station station = (Station) rDAO.findByPrimaryKey(Station.class, stationId);
+        Station station = stationDAO.findByPrimaryKey(Station.class, stationId);
         List<Destination> destinationList = station.getDestination();
         if (destinationList != null)
         for (Destination destination : destinationList) {
@@ -176,6 +176,6 @@ public class StationService {
                 }
             }
         }
-        rDAO.remove(station);
+        stationDAO.remove(station);
     }
 }

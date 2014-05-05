@@ -1,7 +1,11 @@
 <div class="left-sidebar">
+     <sec:authorize access="isAnonymous()">Waiting for authentication</sec:authorize>
      <sec:authorize access="hasRole('ROLE_SPECIALIST')">
         <div id="spec-panel">
-            <ul>
+            <ul class="nav nav-list bs-docs-sidenav">
+                <li class="nav-header">
+                    Specialist menu
+                </li>
                 <li>
                     <a href="${pageContext.request.contextPath}/stations">Station management</a>
                 </li>
@@ -19,7 +23,10 @@
      </sec:authorize>
      <sec:authorize access="hasAnyRole('ROLE_USER', 'ROLE_SPECIALIST')">
         <div id="user-panel">
-            <ul>
+            <ul class="nav nav-list bs-docs-sidenav">
+                <li class="nav-header">
+                    User menu
+                </li>
                 <li>
                     <a href="${pageContext.request.contextPath}/findTrains">Find trains</a>
                 </li>

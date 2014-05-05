@@ -18,27 +18,19 @@
                     <h2>Registration</h2>
                     <form:form method="post" action="${pageContext.request.contextPath}/registration/newUser" commandName="user" >
                         <table id="register-box">
-                            <c:if test="${error ne null}">
-                                <tr>
-                                    <td colspan="2" class="error">Register error: ${error}<br/></td>
-                                </tr>
-                            </c:if>
                             <tr>
-                                <td align="right">Login</td>
-                                <td><form:input path="login"/></td>
+                                <td colspan="2"><form:input class="form-control" placeholder="login" path="login"/></td>
                             </tr>
                             <tr>
-                                <td align="right">Password</td>
-                                <td><form:input id="pass" path="password"/></td>
+                                <td colspan="2"><form:input id="pass" class="form-control" placeholder="password" path="password"/><br/><br/></td>
                             </tr>
                             <tr>
-                                <td colspan="2" align="right">
-                                    <input type="submit" value="Register" />
-                                    <input type="reset" value="Reset" />
-                                </td>
+                                <td><input class="btn btn-large" type="submit" value="Register" /></td>
+                                <td><input class="btn btn-large" type="reset" value="Reset" /></td>
                             </tr>
                         </table>
                     </form:form>
+                    <div class="operation-error">${error}</div>
                 </div>
             </div>
         </div>

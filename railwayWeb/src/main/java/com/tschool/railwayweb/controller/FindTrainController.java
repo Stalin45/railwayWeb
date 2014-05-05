@@ -76,7 +76,12 @@ public class FindTrainController {
             MsgBox msgBox = new MsgBox();
             msgBox.setError("No trains found");
             findTrainFormDTO.setMsgBox(msgBox);
-        } catch (ParseException ex) {}
+        } catch (ParseException ex) {
+            Logger.getLogger(FindTrainController.class.getName()).log(Level.SEVERE, null, ex);
+            MsgBox msgBox = new MsgBox();
+            msgBox.setError("Error while parsing data!");
+            findTrainFormDTO.setMsgBox(msgBox);
+        }
         return findTrainFormDTO;
     }
 }

@@ -208,6 +208,9 @@ public class TrainService {
                                                       train.getTrainType().getType(),train.getPath().getNumber(),
                                                       train.getDate(),train.getFreeSeats()));
         }
+        if (trainDTOList.size() == 0) {
+            throw new FindException("No trains found");
+        }
         return trainDTOList;
     }
     

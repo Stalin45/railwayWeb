@@ -16,29 +16,29 @@
                 <%@include file = "WEB-INF/jsp/parts/sidebar.jsp" %>
                 <div class="container">
                     <h2>Authentication</h2>
-                    <c:if test="${not empty param.error}">
-                        <font color="red"> Login error: ${sessionScope["SPRING_SECURITY_LAST_EXCEPTION"].message} </font>
-                        </c:if>
                     <form method="POST" action="<c:url value="/j_spring_security_check" />">
                         <table id="login-box">
                             <tr>
-                                <td align="right">Login</td>
-                                <td><input type="text" name="j_username" /></td>
+                            <h3>Please sign in:</h3>
                             </tr>
                             <tr>
-                                <td align="right">Password</td>
-                                <td><input type="password" name="j_password" /></td>
+                                <td colspan="2"><input class="form-control" placeholder="login" type="text" name="j_username" /></td>
                             </tr>
                             <tr>
-                                <td align="right">Remember</td>
-                                <td><input type="checkbox" name="_spring_security_remember_me" /></td>
+                                <td colspan="2"><input class="form-control" placeholder="password" type="password" name="j_password" /></td>
                             </tr>
                             <tr>
-                                <td colspan="2" align="right"><input type="submit" value="Login" />
-                                    <input type="reset" value="Reset" /></td>
+                                <td colspan="2"><input type="checkbox" name="_spring_security_remember_me" />  remember me<br/><br/></td>
+                            </tr>
+                            <tr>
+                                <td><input class="btn btn-large" type="submit" value="Login" /></td>
+                                <td><input class="btn btn-large" type="reset" value="Reset" /></td>
                             </tr>
                         </table>
                     </form>
+                    <div class="operation-error">
+                        <c:if test="${not empty param.error}">Login error: ${sessionScope["SPRING_SECURITY_LAST_EXCEPTION"].message}</c:if>
+                    </div>
                 </div>
             </div>
         </div>
