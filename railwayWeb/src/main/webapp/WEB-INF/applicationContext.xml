@@ -15,5 +15,4 @@
     <bean name="trainTypeService" class="com.tschool.railwayweb.service.TrainTypeService"></bean>
     <bean name="stationService" class="com.tschool.railwayweb.service.StationService"></bean>
     <bean name="pathService" class="com.tschool.railwayweb.service.PathService"></bean>
-    
 </beans>

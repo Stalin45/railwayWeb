@@ -12,7 +12,20 @@
             <div class="middle">
                 <%@include file = "parts/sidebar.jsp" %>
                 <div class="container">
-                    <h1>Welcome page</h1>
+                    <h2>Switzerland railway : SBB/CFF/FFS</h2><br/>
+                    <table>
+                        <tr>
+                            <td>
+                                <h3>Swiss Federal Railways</h3> 
+                                <h3>(SBB in German, CFF in French, FFS - Italian)</h3>
+                                <p>is Switzerland's biggest travel and transport company.</p>
+                        
+                            </td>
+                            <td>
+                                <img src="${pageContext.request.contextPath}/static/images/welcome-train.jpg">
+                            </td>
+                        </tr>
+                    </table>
                 </div>
             </div>
         </div>
